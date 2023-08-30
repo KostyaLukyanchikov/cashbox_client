@@ -6,5 +6,6 @@ global win_id
 
 
 if __name__ == '__main__':
-    connect_websocket()
+    ws_thread = connect_websocket()
     window.mainloop()
+    ws_thread.join()

@@ -1,7 +1,7 @@
 import json
 
 from lib.libfptr10 import IFptr
-
+from source.logger import logger
 
 open_shift = {
     "type": "openShift",
@@ -30,7 +30,8 @@ class CashBoxClass:
             res = self.__connection.open()
             if res >= 0:
                 self.is_connected = True
-        except Exception:
+        except Exception as exp:
+            logger.exception(exp)
             self.is_connected = False
 
     def __populate_cashbox_data(self):
@@ -49,28 +50,32 @@ class CashBoxClass:
         self.__populate_cashbox_data()
 
     def send_json_task(self, task: dict):
+        logger.info(("TASK SENDED", task))
         if not self.__validate_json_task(task):
-            return self.last_error
+            return False, self.last_error
         data = json.dumps(task)
         self.__connection.setParam(IFptr.LIBFPTR_PARAM_JSON_DATA, data)
         status = self.__connection.processJson()
+        if status < 0:
+            return False, self.__get_error()
         res = self.__connection.getParamString(IFptr.LIBFPTR_PARAM_JSON_DATA)
+        logger.info(("TASK RESULT", res))
         self.__populate_cashbox_data()
 
-        if status < 0:
-            return self.__get_error()
-        return res
+        return True, res
 
     def __validate_json_task(self, task: dict):
         data = json.dumps(task)
         self.__connection.setParam(IFptr.LIBFPTR_PARAM_JSON_DATA, data)
         if self.__connection.validateJson() < 0:
             self.last_error = f"{self.__connection.errorCode()} {self.__connection.errorDescription()}"
+            logger.error(self.last_error)
             return False
         return True
 
     def __get_error(self):
         self.last_error = f"{self.__connection.errorCode()} {self.__connection.errorDescription()}"
+        logger.error(self.last_error)
         return self.last_error
 
     def disconnect(self):
@@ -93,7 +98,6 @@ class CashBoxClass:
     def close_shift(self):
         if self.is_connected:
             self.send_json_task(close_shift)
-
 
 
 CASHBOX = CashBoxClass()
