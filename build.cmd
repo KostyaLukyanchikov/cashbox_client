@@ -1,0 +1,1 @@
+pyinstaller cashbox_client.py --icon=icon_tk.ico --noconsole --add-data "icon_tk.ico;."

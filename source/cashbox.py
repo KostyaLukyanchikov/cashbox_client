@@ -9,6 +9,9 @@ open_shift = {
 close_shift = {
     "type": "closeShift"
 }
+x_report = {
+    "type": "reportX"
+}
 
 
 class CashBoxClass:
@@ -50,6 +53,9 @@ class CashBoxClass:
         self.__populate_cashbox_data()
 
     def send_json_task(self, task: dict):
+        if not self.is_connected:
+            logger.error("CASHBOX IS NOT CONNECTED")
+            return False, "CASHBOX IS NOT CONNECTED"
         logger.info(("TASK SENDED", task))
         if not self.__validate_json_task(task):
             return False, self.last_error
@@ -74,12 +80,24 @@ class CashBoxClass:
         return True
 
     def __get_error(self):
-        self.last_error = f"{self.__connection.errorCode()} {self.__connection.errorDescription()}"
+        error_code = self.__connection.errorCode()
+        if error_code in (
+                self.__connection.LIBFPTR_ERROR_NO_CONNECTION,
+                self.__connection.LIBFPTR_ERROR_PORT_NOT_AVAILABLE,
+                self.__connection.LIBFPTR_ERROR_PORT_BUSY,
+                self.__connection.LIBFPTR_ERROR_CONNECTION_DISABLED):
+            self.disconnect()
+        description = self.__connection.errorDescription()
+        self.last_error = f"{error_code} {description}"
         logger.error(self.last_error)
         return self.last_error
 
     def disconnect(self):
         self.__connection.close()
+        self.is_connected = False
+
+    def check_connection(self):
+        return self.__connection.isOpened()
         self.is_connected = False
 
     def get_shift_status_caption(self):
@@ -98,6 +116,10 @@ class CashBoxClass:
     def close_shift(self):
         if self.is_connected:
             self.send_json_task(close_shift)
+
+    def x_report(self):
+        if self.is_connected:
+            self.send_json_task(x_report)
 
 
 CASHBOX = CashBoxClass()
