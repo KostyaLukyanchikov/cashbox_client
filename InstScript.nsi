@@ -1,4 +1,5 @@
  !include MUI2.nsh
+ RequestExecutionLevel admin
  Name "Кассовый клиент"
  OutFile cashbox_client_installer.exe
  InstallDir "$APPDATA\cashbox_client"
