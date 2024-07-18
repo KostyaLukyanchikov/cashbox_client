@@ -71,13 +71,24 @@ class CashBoxClass:
         return True, res
 
     def __validate_json_task(self, task: dict):
-        data = json.dumps(task)
-        self.__connection.setParam(IFptr.LIBFPTR_PARAM_JSON_DATA, data)
-        if self.__connection.validateJson() < 0:
-            self.last_error = f"{self.__connection.errorCode()} {self.__connection.errorDescription()}"
-            logger.error(self.last_error)
-            return False
-        return True
+        to_validate = True
+        valid = False
+
+        if task["type"] == "getDeviceStatus":
+            # cause `validateJson` on `getDeviceStatus` returns `LIBFPTR_ERROR_VALIDATE_FUNC_NOT_FOUND`
+            to_validate = False
+            valid = True
+
+        if to_validate:
+            data = json.dumps(task)
+            self.__connection.setParam(IFptr.LIBFPTR_PARAM_JSON_DATA, data)
+            if self.__connection.validateJson() < 0:
+                self.last_error = f"{self.__connection.errorCode()} {self.__connection.errorDescription()}"
+                logger.error(self.last_error)
+            else:
+                valid = True
+
+        return valid
 
     def __get_error(self):
         error_code = self.__connection.errorCode()
